@@ -1,6 +1,6 @@
 # GitHub publication metadata
 
-Prepared locally. Do not publish until the repository owner approves the final release.
+Applied to the public repository [`0xCyberBerserker/sms-esp-rat`](https://github.com/0xCyberBerserker/sms-esp-rat) on 2026-09-07. Social preview upload remains a manual GitHub setting.
 
 ## Repository identity
 
@@ -34,12 +34,12 @@ python
 
 These 15 topics are lowercase, hyphenated where needed, and below GitHub's limit of 20 topics. They combine broad discovery terms with the project's specific function.
 
-## Apply after creating the remote
+## Reapply repository metadata
 
-Replace `OWNER` and run only after reviewing the target repository:
+Run only after reviewing the target repository:
 
 ```bash
-gh repo edit OWNER/sms-esp-rat \
+gh repo edit 0xCyberBerserker/sms-esp-rat \
   --description "Codex skill for token-efficient Spanish technical answers with semantic compression, integrity guards, and reproducible benchmarks." \
   --add-topic codex \
   --add-topic codex-cli \
@@ -64,7 +64,7 @@ Upload `assets/social-preview.png` manually through **Settings → General → S
 
 # Metadatos de publicación en GitHub
 
-Preparados localmente. No publiques hasta que el propietario del repositorio apruebe la release final.
+Aplicados al repositorio público [`0xCyberBerserker/sms-esp-rat`](https://github.com/0xCyberBerserker/sms-esp-rat) el 07-09-2026. Solo queda cargar manualmente la vista previa social en GitHub.
 
 ## Identidad del repositorio
 
@@ -80,11 +80,11 @@ Preparados localmente. No publiques hasta que el propietario del repositorio apr
 
 Usa los 15 topics de la sección inglesa. Combinan búsquedas amplias con la función específica del proyecto sin superar el límite de GitHub.
 
-## Aplicación tras crear el remoto
+## Reaplicar los metadatos
 
-Sustituye `OWNER` en el comando anterior y ejecútalo solo después de comprobar el repositorio de destino. La vista previa social se carga manualmente desde **Settings → General → Social preview → Edit**.
+El comando anterior ya apunta al repositorio definitivo; ejecútalo solo después de comprobar el destino. La vista previa social se carga manualmente desde **Settings → General → Social preview → Edit**.
 
-Antes de hacer público el repositorio:
+## Verificación posterior a la publicación
 
 1. Ejecuta las pruebas y el validador de la skill.
 2. Revisa que el README renderice el banner y las ecuaciones correctamente.
