@@ -52,7 +52,7 @@ $$
 R_{B\rightarrow E}=100\times\frac{7714-6872}{7714}=10.9\%
 $$
 
-Technical integrity is a hard gate: (H=0\Rightarrow\mathrm{FAIL}), regardless of token savings. For a macro with expansion cost (e), alias cost (a), and frequency (f), estimated gain is (G=f(e-a)). If mean input overhead is (h) and mean output saving is (s), session break-even is (N^{*}=h/s). For E, (N^{*}=770.47/8.42\approx91.5), about 92 responses.
+Technical integrity is a hard gate: $H=0\Rightarrow\mathrm{FAIL}$, regardless of token savings. For a macro with expansion cost $e$, alias cost $a$, and frequency $f$, estimated gain is $G=f(e-a)$. If mean input overhead is $h$ and mean output saving is $s$, session break-even is $N^{*}=h/s$. For E, $N^{*}=770.47/8.42\approx91.5$, about 92 responses.
 
 See [docs/modelo-matematico.md](docs/modelo-matematico.md) for symbols, derivations, fidelity, integrity, exact-echo framing, ablation, caching, and worked examples.
 
@@ -122,7 +122,7 @@ $$
 R_{B\rightarrow E}=100\times\frac{7714-6872}{7714}=10.9\%
 $$
 
-La integridad técnica es una puerta dura: (H=0\Rightarrow\mathrm{FAIL}), aunque exista ahorro. Para una macro con coste de expansión (e), coste de alias (a) y frecuencia (f), la ganancia estimada es (G=f(e-a)). Si el overhead medio de entrada es (h) y el ahorro medio de salida es (s), el break-even de sesión es (N^{*}=h/s). Para E, (N^{*}=770.47/8.42\approx91.5): unas 92 respuestas.
+La integridad técnica es una puerta dura: $H=0\Rightarrow\mathrm{FAIL}$, aunque exista ahorro. Para una macro con coste de expansión $e$, coste de alias $a$ y frecuencia $f$, la ganancia estimada es $G=f(e-a)$. Si el overhead medio de entrada es $h$ y el ahorro medio de salida es $s$, el break-even de sesión es $N^{*}=h/s$. Para E, $N^{*}=770.47/8.42\approx91.5$: unas 92 respuestas.
 
 Consulta [docs/modelo-matematico.md](docs/modelo-matematico.md) para ver símbolos, derivaciones, fidelidad, integridad, framing del eco exacto, ablación, caché y ejemplos resueltos.
 
