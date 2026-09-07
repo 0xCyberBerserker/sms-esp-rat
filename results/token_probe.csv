@@ -1,0 +1,13 @@
+original,candidate,original_tokens,candidate_tokens,decision,measurement
+porque,pq,5,5,REJECT,MEASURED
+porque,xq,5,6,REJECT,MEASURED
+también,tb,6,5,ACCEPT,MEASURED
+también,tmb,6,6,REJECT,MEASURED
+para,pa,5,5,REJECT,MEASURED
+configuración,config,6,5,ACCEPT,MEASURED
+configuración,cfg,6,5,ACCEPT,MEASURED
+comportamiento,beh,7,5,ACCEPT,MEASURED
+correcto,ok,6,5,ACCEPT,MEASURED
+error,fail,5,5,REJECT,MEASURED
+comprobar,check,7,5,ACCEPT,MEASURED
+siguiente,next,6,5,ACCEPT,MEASURED

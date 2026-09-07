@@ -1,0 +1,4 @@
+interface:
+  display_name: "SMS ESP Rat"
+  short_description: "Compress Spanish technical output without altering literals"
+  default_prompt: "Use $sms-esp-rat after $token-rat-esp to compress this response safely."

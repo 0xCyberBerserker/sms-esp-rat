@@ -1,0 +1,10 @@
+expansion,alias,expansion_tokens,alias_tokens,unit_gain,measurement
+Solo se hizo el cambio solicitado; comportamiento previo intacto; sin refactor ni cambios fuera de scope.,lorem,25,6,19,MEASURED
+Todas las pruebas indicadas en la respuesta terminaron correctamente.,testok,16,6,10,MEASURED
+El build indicado en la respuesta terminó correctamente.,buildok,13,6,7,MEASURED
+Resultado solicitado incompleto o validado solo parcialmente.,partial,14,5,9,MEASURED
+"Hay checks estáticos correctos, pero falta validar el comportamiento runtime.",runtime?,18,6,12,MEASURED
+Evidencia disponible insuficiente para concluir con confianza.,evidence?,15,7,8,MEASURED
+Progreso bloqueado por la causa literal indicada.,blocked,14,5,9,MEASURED
+"La causa indicada es probable, no confirmada.",cause?,14,6,8,MEASURED
+Existe rollback probado o explícitamente disponible; no implica que se ejecutara.,rollback,19,5,14,MEASURED
