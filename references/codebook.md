@@ -12,7 +12,7 @@
 | `evidence?` | Evidencia disponible insuficiente para concluir con confianza. | evidencia | No usar para fallo confirmado. |
 | `blocked:<causa>` | Progreso bloqueado por la causa literal tras `:`. | estado | Preservar causa y literales. |
 | `cause?` | La causa indicada es probable, no confirmada. | diagnóstico | No elevar certeza. |
-| `rollback` | Existe rollback probado o explícitamente disponible; no implica que se ejecutara. | seguridad | Preservar estado de ejecución. |
+| `rollback` | Existe rollback probado y disponible; no se ejecutó. | seguridad | Las tres afirmaciones deben ser ciertas. |
 
 El autor de este proyecto creó el modo `lorem` y su macro reservada a partir de una sugerencia inicial de [Miguel Ángel Díaz Oliva](https://dedmaphoto.vercel.app/).
 

@@ -14,12 +14,15 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 RESULTS = ROOT / "results"
 MODEL = "gpt-6-astra"
+TOKEN_RAT_COMMIT = "55f78f1d2f599bd73727f75ae04adfe564859bae"
+TOKEN_RAT_SNAPSHOT = ROOT / "references/baselines/token-rat-esp-55f78f1.SKILL.md"
 VARIANTS = {
     "A": "Respond in clear technical Spanish. Preserve every technical literal exactly.",
     "B": None,
@@ -39,7 +42,7 @@ def read(path: Path) -> str:
 
 
 def variant_prompts() -> dict[str, str]:
-    token_rat = read(Path.home() / ".codex/skills/token-rat-esp/SKILL.md")
+    token_rat = read(TOKEN_RAT_SNAPSHOT)
     skill = read(ROOT / "SKILL.md")
     codebook = read(ROOT / "references/codebook.md")
     sms_only = """Apply after token-rat-esp. Use compact telegraphic Spanish: omit inferable articles, pronouns, subjects, connectors, ceremony, and redundant grammar. Prefer concise technical English only when clearer and cheaper. Preserve all code, commands, flags, paths, URLs, identifiers, versions, numbers, negations, conditions, errors, quoted text, and structured data exactly. Do not use semantic aliases or macros."""
@@ -123,7 +126,7 @@ def run_astra(prompt: str, reasoning: str) -> dict:
 def cache_key(case: dict, variant: str, instruction: str, reasoning: str) -> str:
     payload = json.dumps({
         "case": case, "variant": variant, "instruction": instruction,
-        "model": MODEL, "reasoning": reasoning, "harness": 1,
+        "model": MODEL, "reasoning": reasoning, "harness": 2,
     }, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(payload.encode()).hexdigest()
 
@@ -146,35 +149,62 @@ def append_jsonl(path: Path, row: dict) -> None:
         handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 
 
-def fidelity(case: dict, output: str, integrity_ok: bool) -> float:
-    if not integrity_ok:
-        return 0.0
-    if "-minimal" in case.get("id", "") and "lorem" in output.casefold():
-        return 1.0
-    groups = case.get("required_any", [])
-    if not groups:
-        return 1.0
-    normalized = output.casefold()
-    if any(term in normalized for term in ("descartado", "descartada", "ninguna", "ningún")):
-        normalized += " no"
+def normalize(text: str) -> str:
+    folded = unicodedata.normalize("NFKD", text.casefold())
+    return "".join(char for char in folded if not unicodedata.combining(char))
+
+
+def expand_semantics(output: str) -> str:
+    normalized = normalize(output)
     expansions = {
+        "lorem": " cambio solicitado solamente comportamiento previo intacto sin refactor sin cambios fuera de scope api sin cambios ",
         "evidence?": " evidencia insuficiente falta no concluyente ",
         "cause?": " causa probable no confirmada ",
         "partial": " resultado parcial incompleto ",
         "runtime?": " falta validación runtime ejecución ",
-        "blocked:": " trabajo bloqueado dependencia impide ",
-        "rollback": " rollback reversible disponible no ejecutado ",
+        "blocked:": " trabajo bloqueado dependencia ausente no disponible impide ",
+        "rollback": " rollback probado disponible no ejecutado ",
+        "testok": " tests passed pruebas correcto ok ",
     }
     for alias, expansion in expansions.items():
         if alias in normalized:
-            normalized += expansion
-    if "testok" in normalized:
-        normalized += " tests passed pruebas correcto ok"
-    if any(term in normalized for term in ("pasó", "pasaron", "superado", "superada", "superadas")):
+            normalized += normalize(expansion)
+    if any(term in normalized for term in ("paso", "pasaron", "superado", "superada", "superadas")):
         normalized += " passed"
-    if case.get("id") == "case-088-diverse" and "blocked:" in normalized and "install" not in normalized:
+    return normalized
+
+
+def semantic_violations(case: dict, output: str) -> list[str]:
+    raw = normalize(output)
+    normalized = expand_semantics(output)
+    checks = case.get("semantic_checks", {})
+    violations = [
+        f"missing semantic relation: {pattern}"
+        for pattern in checks.get("all_regex", [])
+        if not re.search(pattern, normalized, flags=re.DOTALL)
+    ]
+    violations.extend(
+        f"forbidden semantic claim: {pattern}"
+        for pattern in checks.get("forbidden_regex", [])
+        if re.search(pattern, normalized, flags=re.DOTALL)
+    )
+    violations.extend(
+        f"forbidden raw claim: {pattern}"
+        for pattern in checks.get("forbidden_raw_regex", [])
+        if re.search(pattern, raw, flags=re.DOTALL)
+    )
+    return violations
+
+
+def heuristic_coverage(case: dict, output: str, integrity_ok: bool) -> float:
+    """Return heuristic claim coverage; this is not a semantic equivalence proof."""
+    if not integrity_ok or semantic_violations(case, output):
+        return 0.0
+    groups = case.get("required_any", [])
+    if not groups:
         return 1.0
-    hit = sum(any(term.casefold() in normalized for term in group) for group in groups)
+    normalized = expand_semantics(output)
+    hit = sum(any(normalize(term) in normalized for term in group) for group in groups)
     return round(hit / len(groups), 3)
 
 
@@ -186,8 +216,8 @@ def summarize(rows: list[dict]) -> None:
     token_rat = sum(r["output_tokens"] for r in by_variant.get("B", [])) or 1
     lines = [
         "# Benchmark summary", "", "Counts marked MEASURED come from Astra/Codex CLI usage.", "",
-        "| Variant | Calls | Output tokens | vs A | vs B | Median | p90 | Fidelity | Integrity fails |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Variant | Calls | Output tokens | vs A | vs B | Median | p90 | Heuristic coverage | Integrity fails | Semantic violations |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for variant in "ABCDE":
         group = by_variant.get(variant, [])
@@ -199,10 +229,11 @@ def summarize(rows: list[dict]) -> None:
         lines.append(
             f"| {variant} | {len(group)} | {total} | {(1-total/baseline)*100:.1f}% | "
             f"{(1-total/token_rat)*100:.1f}% | {statistics.median(values):.1f} | {p90} | "
-            f"{statistics.mean(r['fidelity'] for r in group):.3f} | "
-            f"{sum(not r['integrity_ok'] for r in group)} |"
+            f"{statistics.mean(r['heuristic_coverage'] for r in group):.3f} | "
+            f"{sum(not r['integrity_ok'] for r in group)} | "
+            f"{sum(bool(r.get('semantic_violations')) for r in group)} |"
         )
-    lines.extend(["", "Primary metric: B -> E output-token reduction.", ""])
+    lines.extend(["", "Primary metric: B -> E output-token reduction on this synthetic corpus. Heuristic coverage is diagnostic only and does not prove semantic equivalence.", ""])
     (RESULTS / "summary.md").write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -223,7 +254,9 @@ def benchmark(args: argparse.Namespace) -> int:
                 row = dict(cache[key])
                 ok, missing = integrity(case, row["output"])
                 row.update(integrity_ok=ok, missing_protected=missing,
-                           fidelity=fidelity(case, row["output"], ok))
+                           semantic_violations=semantic_violations(case, row["output"]),
+                           heuristic_coverage=heuristic_coverage(case, row["output"], ok))
+                row.pop("fidelity", None)
                 indexed[(case["id"], variant)] = row
                 hits += 1
             else:
@@ -240,6 +273,8 @@ def benchmark(args: argparse.Namespace) -> int:
         row = {
                     "cache_key": key, "case_id": case["id"], "split": case["split"],
                     "category": case["category"], "variant": variant, "model": MODEL,
+                    "instruction_sha256": hashlib.sha256(instruction.encode()).hexdigest(),
+                    "token_rat_commit": TOKEN_RAT_COMMIT if variant != "A" else None,
                     "reasoning": args.reasoning, "output": result["output"],
                     "input_tokens": usage.get("input_tokens"),
                     "output_tokens": usage.get("output_tokens"),
@@ -248,8 +283,9 @@ def benchmark(args: argparse.Namespace) -> int:
                     "characters": len(result["output"]), "words": len(result["output"].split()),
                     "latency_s": result["latency_s"], "integrity_ok": ok,
                     "missing_protected": missing,
+                    "semantic_violations": semantic_violations(case, result["output"]),
         }
-        row["fidelity"] = fidelity(case, row["output"], ok)
+        row["heuristic_coverage"] = heuristic_coverage(case, row["output"], ok)
         return (case["id"], variant), row
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
@@ -285,6 +321,28 @@ def benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def rescore(path: Path) -> int:
+    cases = {case["id"]: case for case in load_cases("final")}
+    rows = [json.loads(line) for line in read(path).splitlines() if line.strip()]
+    for row in rows:
+        case = cases[row["case_id"]]
+        ok, missing = integrity(case, row["output"])
+        row.update(
+            integrity_ok=ok,
+            missing_protected=missing,
+            semantic_violations=semantic_violations(case, row["output"]),
+            heuristic_coverage=heuristic_coverage(case, row["output"], ok),
+        )
+        row.pop("fidelity", None)
+    path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    summarize(rows)
+    print(json.dumps({"rescored": str(path), "rows": len(rows), "calls": 0}))
+    return 0
+
+
 def probe(args: argparse.Namespace) -> int:
     candidates = [
         ("porque", "pq"), ("porque", "xq"), ("también", "tb"), ("también", "tmb"),
@@ -301,7 +359,7 @@ def probe(args: argparse.Namespace) -> int:
         ("Evidencia disponible insuficiente para concluir con confianza.", "evidence?"),
         ("Progreso bloqueado por la causa literal indicada.", "blocked"),
         ("La causa indicada es probable, no confirmada.", "cause?"),
-        ("Existe rollback probado o explícitamente disponible; no implica que se ejecutara.", "rollback"),
+        ("Existe rollback probado y disponible; no se ejecutó.", "rollback"),
     ]
     cache = load_cache()
     counts: dict[str, int] = {}
@@ -320,6 +378,7 @@ def probe(args: argparse.Namespace) -> int:
         else:
             result = run_astra(instruction, args.reasoning)
             row = {"cache_key": key, "case_id": case["id"], "variant": "probe", "model": MODEL,
+                   "instruction_sha256": hashlib.sha256(instruction.encode()).hexdigest(),
                    "reasoning": args.reasoning, "output": result["output"],
                    "output_tokens": result["usage"].get("output_tokens"),
                    "input_tokens": result["usage"].get("input_tokens"), "latency_s": result["latency_s"]}
@@ -347,13 +406,19 @@ def probe(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--phase", choices=["probe", *PHASES], required=True)
+    parser.add_argument("--phase", choices=["probe", *PHASES])
+    parser.add_argument("--rescore", type=Path)
     parser.add_argument("--max-calls", type=int, default=800)
     parser.add_argument("--reasoning", choices=["low", "medium", "high"], default="low")
     parser.add_argument("--jobs", type=int, choices=range(1, 5), default=1)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if bool(args.phase) == bool(args.rescore):
+        parser.error("choose exactly one of --phase or --rescore")
+    return args
 
 
 if __name__ == "__main__":
     options = parse_args()
+    if options.rescore:
+        sys.exit(rescore(options.rescore))
     sys.exit(probe(options) if options.phase == "probe" else benchmark(options))

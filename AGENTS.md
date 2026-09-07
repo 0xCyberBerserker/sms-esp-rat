@@ -20,5 +20,6 @@ This repository contains the `sms-esp-rat` Codex skill and its reproducible Astr
 - Use UTF-8.
 - Do not log credentials or environment dumps.
 - Do not exceed the requested Astra call budget; rely on the content-addressed cache.
-- Holdout data must not influence codebook selection before the final run.
+- Treat the existing holdout as contaminated legacy data; do not use it for future selection or confirmatory claims.
+- Use the pinned `token-rat-esp` snapshot for benchmark variants B-E and record instruction hashes.
 - Prefer small stdlib patches and targeted tests.

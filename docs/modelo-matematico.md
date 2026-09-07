@@ -14,7 +14,7 @@ For case (i) and variant (v):
 | (C_{i,v}) | Output characters |
 | (W_{i,v}) | Output words |
 | (L_{i,v}) | Latency in seconds |
-| (F_{i,v}) | Semantic fidelity score in ([0,1]) |
+| (K_{i,v}) | Heuristic claim-coverage score in ([0,1]) |
 | (H_{i,v}) | Technical integrity indicator: 1 if preserved, 0 otherwise |
 
 The benchmark variants are:
@@ -93,23 +93,27 @@ $$
 
 This measures the full pipeline reduction rather than the incremental contribution of `sms-esp-rat`.
 
-## 4. Fidelity
+### Split sensitivity
+
+The combined 10.92% is not a holdout estimate. The recorded B→E reductions were 11.61% on training, 12.68% on validation, and 5.35% on the legacy holdout. That holdout was inspected during tuning, so it is contaminated and descriptive only.
+
+## 4. Heuristic claim coverage
 
 Each case defines (m_i) required semantic groups. If (h_{i,v}) groups are represented correctly:
 
 $$
-F_{i,v}=\frac{h_{i,v}}{m_i}
+K_{i,v}=\frac{h_{i,v}}{m_i}
 $$
 
-If no explicit semantic groups exist, fidelity defaults to 1 after technical integrity passes. Known macros are evaluated using their canonical expansion, so `lorem` counts as its complete meaning rather than as an unexplained word.
+If no explicit claim groups exist, coverage defaults to 1 after technical integrity passes. Known macros are evaluated using their canonical expansion, so `lorem` counts as its complete meaning rather than as an unexplained word. Explicit relation checks reject a small set of known contradictions.
 
-Aggregate fidelity is the arithmetic mean:
+Aggregate coverage is the arithmetic mean:
 
 $$
-\bar F_v=\frac{1}{n}\sum_{i=1}^{n}F_{i,v}
+\bar K_v=\frac{1}{n}\sum_{i=1}^{n}K_{i,v}
 $$
 
-This is a deterministic reconstruction proxy, not a universal semantic metric. GPT-5.6 review of anomalies complements it.
+This is a deterministic lexical and rule-based diagnostic, not a semantic-equivalence metric. A value of 1 does not prove preservation of meaning. The checks were improved after observing counterexamples, so their result is not independent confirmatory evidence.
 
 ## 5. Technical integrity
 
@@ -163,7 +167,7 @@ $$
 G_{\text{lorem}}=9\times19=171\text{ tokens}
 $$
 
-The estimate ranks candidates; actual end-to-end savings remain authoritative because model phrasing is not perfectly additive.
+The estimate ranks candidates; recorded output-token differences remain the descriptive measure for this sample because model phrasing is not perfectly additive.
 
 ### Exact-echo framing
 
@@ -173,7 +177,7 @@ $$
 M(x)=k+\tau(x)
 $$
 
-where (	au(x)) is the model token cost of string (x). Paired subtraction cancels that framing:
+where $\tau(x)$ is the model token cost of string $x$. Paired subtraction cancels that framing:
 
 $$
 M(\mathrm{expansion})-M(\mathrm{alias})
@@ -201,7 +205,7 @@ S_{\mathrm{full}}=O_B^{\mathrm{total}}-O_E^{\mathrm{total}}
 =7714-6872=842
 $$
 
-Percentage contributions over B are 6.4%, 12.4%, and 10.9%, respectively. Because D beats E by 112 output tokens, the mechanisms do not combine additively in this corpus.
+Percentage differences over B are 6.4%, 12.4%, and 10.9%, respectively. D produced 112 fewer output tokens than E in this one-sample corpus.
 
 A descriptive interaction term is:
 
@@ -213,7 +217,7 @@ $$
 J=842-(491+954)=-603
 $$
 
-The negative value indicates overlap or interference, not that SMS adds 603 tokens directly. Model generation is nonlinear, so this term is diagnostic rather than causal.
+The negative value is descriptive only. The prompts are not an exact controlled factorial intervention, generation is nonlinear, and there is one sample per cell. Therefore it does not isolate causal overlap or interference.
 
 ## 8. Input overhead and break-even
 
@@ -229,7 +233,7 @@ $$
 s_v=\frac{1}{n}\sum_{i=1}^{n}(O_{i,B}-O_{i,v})
 $$
 
-If the codebook is loaded once and reused across a session, approximate net saving after (N) responses is:
+If, hypothetically, the instruction overhead were paid once and reused across a session, approximate net saving after (N) responses would be:
 
 $$
 \mathrm{Net}_v(N)=N\times s_v-h_v
@@ -247,9 +251,29 @@ $$
 N_E^{*}=\frac{770.47}{8.42}=91.50
 $$
 
-The first whole response beyond break-even is approximately 92 responses. Corresponding measured thresholds are approximately 12 responses for C and 40 for D.
+Under that assumption, the first whole response beyond break-even would be 92. Analogous conditional values are about 12 for C and 40 for D.
 
-This session model is an approximation. The CLI benchmark reloads context per invocation; real multi-turn caching may lower effective overhead.
+These are not empirical break-even results. The CLI benchmark used independent invocations and reloaded the instructions each time. It did not measure a multi-turn session, context reuse, cache billing, or stable per-session overhead.
+
+The observed aggregate comparison is instead:
+
+$$
+\Delta I_{B\rightarrow E}=2{,}607{,}555-2{,}530{,}508=77{,}047
+$$
+
+$$
+\Delta T_{B\rightarrow E}=2{,}614{,}427-2{,}538{,}222=76{,}205
+$$
+
+$$
+100\times\frac{76{,}205}{2{,}538{,}222}=3.002\%\approx3.00\%
+$$
+
+Thus E used fewer output tokens but more input-plus-output tokens in this run. Monetary cost needs separate input and output prices:
+
+$$
+C_v=p_I I_v+p_O O_v
+$$
 
 ## 9. Cache and call budget
 
@@ -299,7 +323,7 @@ Para el caso (i) y la variante (v):
 | (C_{i,v}) | Caracteres de salida |
 | (W_{i,v}) | Palabras de salida |
 | (L_{i,v}) | Latencia en segundos |
-| (F_{i,v}) | Fidelidad semántica en ([0,1]) |
+| (K_{i,v}) | Cobertura heurística de afirmaciones en ([0,1]) |
 | (H_{i,v}) | Integridad técnica: 1 si se preserva, 0 si falla |
 
 Las variantes son (A) baseline, (B) `token-rat-esp`, (C) SMS, (D) codebook y (E) pipeline completo.
@@ -350,17 +374,23 @@ R_{A\rightarrow E}=100\times\frac{9550-6872}{9550}
 =28.042\%\approx28.0\%
 $$
 
-## 4. Fidelidad e integridad
+### Sensibilidad por partición
+
+El 10,92 % combinado no es una estimación de holdout. Las reducciones B→E registradas fueron 11,61 % en training, 12,68 % en validation y 5,35 % en el holdout heredado. Ese holdout se inspeccionó durante el ajuste, por lo que está contaminado y solo permite una descripción.
+
+## 4. Cobertura heurística e integridad
 
 Si un caso define (m_i) grupos semánticos obligatorios y la salida conserva (h_{i,v}):
 
 $$
-F_{i,v}=\frac{h_{i,v}}{m_i}
+K_{i,v}=\frac{h_{i,v}}{m_i}
 \qquad
-\bar F_v=\frac{1}{n}\sum_{i=1}^{n}F_{i,v}
+\bar K_v=\frac{1}{n}\sum_{i=1}^{n}K_{i,v}
 $$
 
-Las macros se evalúan mediante su expansión canónica. Por ejemplo, `lorem` cuenta como sus tres afirmaciones completas.
+Las macros se evalúan mediante su expansión canónica. Por ejemplo, `lorem` cuenta como sus tres afirmaciones completas. Algunas relaciones conocidas tienen reglas explícitas contra contradicciones.
+
+Esta métrica es un diagnóstico léxico y basado en reglas, no una medida de equivalencia semántica. Un valor 1 no demuestra que el significado se haya preservado. Además, las reglas se corrigieron tras observar contraejemplos, por lo que no constituyen evidencia confirmatoria independiente.
 
 Sea (P_i) el conjunto de literales protegidos y (Y_{i,v}) la salida:
 
@@ -427,14 +457,14 @@ $$
 S_{\mathrm{full}}=7714-6872=842\text{ tokens}=10.9\%
 $$
 
-D supera a E por 112 output tokens. La interacción descriptiva es:
+D produjo 112 output tokens menos que E en esta única muestra. La interacción descriptiva es:
 
 $$
 J=S_{\mathrm{full}}-(S_{\mathrm{SMS}}+S_{\mathrm{codebook}})
 =842-(491+954)=-603
 $$
 
-El valor negativo señala solapamiento o interferencia. No significa que SMS añada directamente 603 tokens: la generación del modelo es no lineal.
+El valor no aísla causalmente solapamiento o interferencia: los prompts no forman una intervención factorial controlada, la generación es no lineal y solo hay una muestra por celda.
 
 ## 7. Overhead y break-even
 
@@ -446,7 +476,7 @@ $$
 s_v=\frac{1}{n}\sum_{i=1}^{n}(O_{i,B}-O_{i,v})
 $$
 
-Si el contexto se carga una vez y se reutiliza durante (N) respuestas:
+Si, hipotéticamente, el overhead de instrucciones se pagase una vez y se reutilizase durante (N) respuestas:
 
 $$
 \mathrm{Neto}_v(N)=N\times s_v-h_v
@@ -462,7 +492,29 @@ $$
 N_E^{*}=\frac{770.47}{8.42}=91.50
 $$
 
-El primer número entero que supera el punto de equilibrio es aproximadamente 92 respuestas. Para C son unas 12; para D, unas 40. Es una aproximación de sesión: la caché real entre turnos puede reducir el overhead efectivo.
+Bajo esa hipótesis, el primer entero posterior al equilibrio sería 92. Los valores condicionales análogos serían unas 12 respuestas para C y 40 para D.
+
+No son break-even empíricos. El benchmark usó invocaciones independientes y volvió a cargar las instrucciones en cada una; no midió una sesión multiturno, reutilización de contexto, facturación de caché ni overhead estable por sesión.
+
+La comparación agregada observada es:
+
+$$
+\Delta I_{B\rightarrow E}=2\,607\,555-2\,530\,508=77\,047
+$$
+
+$$
+\Delta T_{B\rightarrow E}=2\,614\,427-2\,538\,222=76\,205
+$$
+
+$$
+100\times\frac{76\,205}{2\,538\,222}=3{,}002\%\approx3{,}00\%
+$$
+
+Por tanto, E usó menos tokens de salida, pero más tokens totales de entrada más salida. El coste monetario requiere precios separados:
+
+$$
+C_v=p_I I_v+p_O O_v
+$$
 
 ## 8. Presupuesto y caché
 

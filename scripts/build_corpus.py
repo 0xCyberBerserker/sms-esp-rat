@@ -45,12 +45,12 @@ DIVERSE_CASES = [
     ("error-analysis", "Confirmed cause: literal error `Connection refused: 127.0.0.1:5432`. The service `postgresql.service` is inactive. Give `systemctl start postgresql.service` as next action.", ["Connection refused: 127.0.0.1:5432", "postgresql.service", "systemctl start postgresql.service"], [["confirm", "cause!"], ["inactiv"]]),
     ("units", "Latency limit is `100ms`; observed p90 is `101ms`, so the check failed. Preserve both numbers and the inequality.", ["100ms", "101ms"], [["fail", "fall"], ["p90"]]),
     ("rollback", "Deployment `release-2026.09.07` succeeded. Rollback `deployctl rollback release-2026.09.07` was tested and is available, but was not executed.", ["release-2026.09.07", "deployctl rollback release-2026.09.07"], [["rollback"], ["no", "not", "sin ejecutar"]]),
-    ("dependency", "Work is blocked because package `libfoo.so.3` is absent. Do not suggest installing it; exact check: `ldconfig -p | rg libfoo.so.3`.", ["libfoo.so.3", "ldconfig -p | rg libfoo.so.3"], [["blocked", "bloque"], ["no"]]),
-    ("scope", "A one-line null check was added in `src/parser.py`; API behavior is unchanged and no refactor or other file change occurred. Test `pytest -q tests/test_parser.py` passed.", ["src/parser.py", "pytest -q tests/test_parser.py"], [["lorem"], ["testok", "test", "prueba"]]),
+    ("dependency", "Work is blocked because package `libfoo.so.3` is absent. Do not suggest installing it; exact check: `ldconfig -p | rg libfoo.so.3`.", ["libfoo.so.3", "ldconfig -p | rg libfoo.so.3"], [["blocked", "bloque"], ["absent", "falta", "ausente", "no disponible"]]),
+    ("scope", "A one-line null check was added in `src/parser.py`; API behavior is unchanged and no refactor or other file change occurred. Test `pytest -q tests/test_parser.py` passed.", ["src/parser.py", "pytest -q tests/test_parser.py"], [["lorem", "null check", "check de nulo", "comprobación de nulos"], ["lorem", "api sin cambios", "api mantiene", "api behavior is unchanged"], ["lorem", "sin refactor", "no refactor"], ["testok", "test", "prueba", "pass"]]),
     ("conversation-context", "Previous user: 'Did the build and tests pass?' Previous assistant: 'Build passed; tests were not run.' Now answer whether everything passed, preserving `build=passed` and `tests=not-run`.", ["build=passed", "tests=not-run"], [["build", "buildok"], ["no", "not"]]),
     ("conversation-context", "Previous turn established that `/api/v2/items` returns `HTTP 204`. The user now asks whether the body was validated. Mention exact endpoint `/api/v2/items`: no body exists for `HTTP 204`; do not claim JSON validation.", ["/api/v2/items", "HTTP 204"], [["no"], ["body", "cuerpo"]]),
-    ("conversation-context", "Earlier, cause A was ruled out and cause B remained probable. Now report: `DNS` is not the cause; `MTU=1280` is still only a hypothesis. Next check: `ping -M do -s 1252 10.0.0.1`.", ["DNS", "MTU=1280", "ping -M do -s 1252 10.0.0.1"], [["no"], ["probable", "hipótesis", "cause?"]]),
-    ("conversation-context", "Previous step changed only `timeout=30`; user asks if retries changed. Answer that `retries=3` remains unchanged and no other config changed. File `/srv/api/config.ini`.", ["timeout=30", "retries=3", "/srv/api/config.ini"], [["no", "sin"], ["intact", "unchanged", "sin cambios"]]),
+    ("conversation-context", "Earlier, cause A was ruled out and cause B remained probable. Now report: `DNS` is not the cause; `MTU=1280` is still only a hypothesis. Next check: `ping -M do -s 1252 10.0.0.1`.", ["DNS", "MTU=1280", "ping -M do -s 1252 10.0.0.1"], [["no", "descartad"], ["probable", "hipótesis", "cause?"]]),
+    ("conversation-context", "Previous step changed only `timeout=30`; user asks if retries changed. Answer that `retries=3` remains unchanged and no other config changed. File `/srv/api/config.ini`.", ["timeout=30", "retries=3", "/srv/api/config.ini"], [["no", "sin", "ningún", "ninguna"], ["intact", "unchanged", "sin cambios"]]),
     ("structured-data", "Repeat this JSON exactly, then state that validation passed: ```json\n{\"enabled\": false, \"limit\": 10}\n```", ["```json\n{\"enabled\": false, \"limit\": 10}\n```"], [["pas", "correct", "ok"]]),
     ("network", "Endpoint `https://example.invalid/api?q=a%2Fb` returned `HTTP 503`; fallback `http://10.0.0.9:8080/health` was deliberately not used.", ["https://example.invalid/api?q=a%2Fb", "HTTP 503", "http://10.0.0.9:8080/health"], [["no", "not", "sin usar"], ["503", "fail", "error"]]),
     ("filesystem", "File `/srv/app/config.yaml` exists; `/srv/app/config.yml` does not. Exact command: `test -f /srv/app/config.yaml`.", ["/srv/app/config.yaml", "/srv/app/config.yml", "test -f /srv/app/config.yaml"], [["exist"], ["no"]]),
@@ -58,6 +58,36 @@ DIVERSE_CASES = [
     ("numeric-boundary", "Allowed range is `0 <= retries <= 5`; observed `retries=6`, therefore configuration is invalid. Check `appctl validate --strict`.", ["0 <= retries <= 5", "retries=6", "appctl validate --strict"], [["inválid", "invalid", "fail"]]),
     ("multiphase", "Phase 1 tests passed; phase 2 build passed; phase 3 runtime check was skipped due to missing authorization. Commands: `pytest -q`, `npm run build`, `deployctl verify --prod`.", ["pytest -q", "npm run build", "deployctl verify --prod"], [["pas", "testok"], ["build", "buildok"], ["skip", "omit", "no"]]),
 ]
+
+SEMANTIC_CHECKS = {
+    "configuration": {
+        "all_regex": [
+            r"enabled=true(?:(?!enabled=false).){0,80}\bactivo\b",
+            r"enabled=false(?:(?!enabled=true).){0,80}(?:\binactivo\b|\bno(?:\s+\w+){0,2}\s+activo\b)",
+        ],
+    },
+    "units": {
+        "all_regex": [
+            r"(?:101ms`?\s*>\s*(?:\w+\s+){0,3}`?100ms|101ms(?:(?!100ms).){0,60}(?:supera|excede|mayor).*100ms)",
+        ],
+    },
+    "rollback": {
+        "all_regex": [
+            r"\brollback\b.{0,160}\bprobad",
+            r"(?:\bno\b(?:\s+\w+){0,2}\s+ejecutad|\bsin\s+ejecutar)",
+        ],
+        "forbidden_raw_regex": [
+            r"\brollback\b(?:(?!\bno\b|\bsin\b).){0,80}\bejecut\w*\b",
+        ],
+    },
+    "dependency": {
+        "forbidden_regex": [
+            r"\b(?:debes|debe|conviene|recomiendo|recomendamos)\s+instalar",
+            r"(?<!\bno )\binstalalo\b",
+            r"\binstall it\b",
+        ],
+    },
+}
 
 
 def make_case(index: int) -> dict:
@@ -67,6 +97,7 @@ def make_case(index: int) -> dict:
             "id": f"case-{index:03d}-diverse", "split": "holdout", "category": category,
             "prompt": "Answer in concise technical Spanish. " + prompt,
             "protected": protected, "required_any": required,
+            "semantic_checks": SEMANTIC_CHECKS.get(category, {}),
         }
     category = CATEGORIES[index % len(CATEGORIES)]
     state, fact, required = STATES[index % len(STATES)]

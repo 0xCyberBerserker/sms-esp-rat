@@ -7,9 +7,9 @@
 [![Last commit](https://img.shields.io/github/last-commit/0xCyberBerserker/sms-esp-rat?style=flat-square)](https://github.com/0xCyberBerserker/sms-esp-rat/commits/main)
 ![Made for Codex](https://img.shields.io/badge/Made%20for-Codex-black?style=flat-square)
 ![Language](https://img.shields.io/badge/Language-Spanish%20technical-blue?style=flat-square)
-![Benchmark](https://img.shields.io/badge/Benchmark-reproducible-green?style=flat-square)
+![Benchmark](https://img.shields.io/badge/Benchmark-exploratory-orange?style=flat-square)
 
-Codex post-processing skill for token-efficient Spanish technical answers. It runs conceptually after `token-rat-esp`, combining measured telegraphic phrasing with semantic compression, integrity guards, and a reproducible benchmark while preserving technical literals.
+Codex post-processing skill for token-efficient Spanish technical answers. It runs conceptually after `token-rat-esp`, combining telegraphic phrasing, a compact codebook, protected-literal checks, and an exploratory reproducible benchmark.
 
 `raw -> token-rat-esp -> sms-esp-rat -> final`
 
@@ -52,9 +52,11 @@ $$
 R_{B\rightarrow E}=100\times\frac{7714-6872}{7714}=10.9\%
 $$
 
-Technical integrity is a hard gate: $H=0\Rightarrow\mathrm{FAIL}$, regardless of token savings. For a macro with expansion cost $e$, alias cost $a$, and frequency $f$, estimated gain is $G=f(e-a)$. If mean input overhead is $h$ and mean output saving is $s$, session break-even is $N^{*}=h/s$. For E, $N^{*}=770.47/8.42\approx91.5$, about 92 responses.
+Technical-literal integrity is a hard gate: $H=0\Rightarrow\mathrm{FAIL}$, regardless of output-token savings. For a macro with expansion cost $e$, alias cost $a$, and frequency $f$, estimated gain is $G=f(e-a)$.
 
-See [docs/modelo-matematico.md](docs/modelo-matematico.md) for symbols, derivations, fidelity, integrity, exact-echo framing, ablation, caching, and worked examples.
+In this synthetic corpus, the recorded E outputs used 10.92% fewer tokens than B. Semantic preservation and net savings require additional validation: the current evaluator measures heuristic claim coverage, not semantic equivalence, and E used 76,205 more aggregate input-plus-output tokens than B in independent calls (+3.00%). The often-quoted 92-response break-even is only a conditional model in which instruction overhead is paid once and reused; this benchmark did not test that session model.
+
+See [docs/modelo-matematico.md](docs/modelo-matematico.md) for symbols, derivations, heuristic coverage, integrity, exact-echo framing, ablation, caching, and limitations.
 
 ## Quick start
 
@@ -81,7 +83,7 @@ The author of this project created the `lorem` mode and its reserved macro after
 
 # sms-esp-rat (Español)
 
-Skill de posprocesado para Codex orientada a respuestas técnicas en español con uso eficiente de tokens. Se aplica conceptualmente después de `token-rat-esp` y combina redacción telegráfica medida, compresión semántica, controles de integridad y un benchmark reproducible, preservando los literales técnicos.
+Skill de posprocesado para Codex orientada a respuestas técnicas en español con uso eficiente de tokens. Se aplica conceptualmente después de `token-rat-esp` y combina redacción telegráfica, un codebook compacto, controles de literales protegidos y un benchmark exploratorio reproducible.
 
 ## Instalación recomendada
 
@@ -122,9 +124,11 @@ $$
 R_{B\rightarrow E}=100\times\frac{7714-6872}{7714}=10.9\%
 $$
 
-La integridad técnica es una puerta dura: $H=0\Rightarrow\mathrm{FAIL}$, aunque exista ahorro. Para una macro con coste de expansión $e$, coste de alias $a$ y frecuencia $f$, la ganancia estimada es $G=f(e-a)$. Si el overhead medio de entrada es $h$ y el ahorro medio de salida es $s$, el break-even de sesión es $N^{*}=h/s$. Para E, $N^{*}=770.47/8.42\approx91.5$: unas 92 respuestas.
+La integridad de literales técnicos es una puerta dura: $H=0\Rightarrow\mathrm{FAIL}$, aunque exista ahorro de salida. Para una macro con coste de expansión $e$, coste de alias $a$ y frecuencia $f$, la ganancia estimada es $G=f(e-a)$.
 
-Consulta [docs/modelo-matematico.md](docs/modelo-matematico.md) para ver símbolos, derivaciones, fidelidad, integridad, framing del eco exacto, ablación, caché y ejemplos resueltos.
+En este corpus sintético, las salidas registradas de E consumieron un 10,92 % menos tokens que B. La preservación semántica y el ahorro neto requieren validación adicional: el evaluador actual mide cobertura heurística de afirmaciones, no equivalencia semántica, y E consumió 76.205 tokens agregados de entrada más salida adicionales frente a B en llamadas independientes (+3,00 %). El break-even de 92 respuestas es solo un modelo condicional donde el overhead de instrucciones se paga una vez y se reutiliza; este benchmark no probó ese modelo de sesión.
+
+Consulta [docs/modelo-matematico.md](docs/modelo-matematico.md) para ver símbolos, derivaciones, cobertura heurística, integridad, framing del eco exacto, ablación, caché y limitaciones.
 
 ## Inicio rápido
 
